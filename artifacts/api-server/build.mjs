@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
 import { rm } from "node:fs/promises";
+import fs from "node:fs";
+import { execSync } from "node:child_process";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -118,6 +120,41 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+
+  // Populate public directory for static hosting / Vercel deployment
+  const serverPublicDir = path.resolve(artifactDir, "public");
+  fs.mkdirSync(serverPublicDir, { recursive: true });
+
+  const webDistDir = path.resolve(artifactDir, "../trustscore-ai/dist/public");
+  if (!fs.existsSync(path.resolve(webDistDir, "index.html"))) {
+    console.log("Building @workspace/trustscore-ai for web distribution...");
+    try {
+      execSync("pnpm --filter @workspace/trustscore-ai run build", {
+        cwd: path.resolve(artifactDir, "../.."),
+        stdio: "inherit",
+      });
+    } catch (e) {
+      console.warn("pnpm build failed, trying npx vite build...", e.message);
+      try {
+        execSync("npx vite build --config vite.config.ts", {
+          cwd: path.resolve(artifactDir, "../trustscore-ai"),
+          stdio: "inherit",
+        });
+      } catch (e2) {
+        console.error("Could not build web frontend:", e2.message);
+      }
+    }
+  }
+
+  if (fs.existsSync(webDistDir)) {
+    console.log("Copying web assets to " + serverPublicDir);
+    fs.cpSync(webDistDir, serverPublicDir, { recursive: true });
+  } else {
+    fs.writeFileSync(
+      path.resolve(serverPublicDir, "index.html"),
+      `<!DOCTYPE html><html><head><title>TrustScore AI</title></head><body><div id="root">TrustScore AI</div></body></html>`
+    );
+  }
 }
 
 buildAll().catch((err) => {
