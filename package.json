@@ -12,9 +12,7 @@
     "dev": "pnpm -r --filter @workspace/api-server --filter @workspace/trustscore-ai --parallel run dev"
   },
   "private": true,
-  "dependencies": {
-    "@replit/connectors-sdk": "^0.4.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "prettier": "^3.9.6",
     "typescript": "~5.9.3"

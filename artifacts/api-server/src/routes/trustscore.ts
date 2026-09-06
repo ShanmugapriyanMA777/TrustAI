@@ -87,14 +87,17 @@ router.delete("/evaluations/:id", (req, res) => {
   evaluations.splice(index, 1);
   res.sendStatus(204);
 });
-router.post("/evaluations/:id/run", (req, res) => {
+import { checkOpenRouterHealth } from "../lib/openrouter";
+
+router.post("/evaluations/:id/run", async (req, res) => {
   const parsed = RunEvaluationParams.safeParse(req.params);
   const evaluation = evaluations.find((item) => item.id === parsed.data?.id);
   if (!parsed.success || !evaluation) {
     res.status(404).json({ error: "Evaluation not found" });
     return;
   }
-  res.json(runEvaluation(evaluation));
+  const result = await runEvaluation(evaluation);
+  res.json(result);
 });
 router.get("/evaluations/:id/results", (req, res) => {
   const parsed = GetEvaluationResultsParams.safeParse(req.params);
@@ -113,12 +116,12 @@ router.post("/test-suites/generate", (req, res) => {
   const { category, difficulty, count } = parsed.data;
   const bank = getResults("eval-001");
   const generated = Array.from({ length: count }, (_, index) => ({
-    ...bank[index % bank.length],
+    ...bank[index % (bank.length || 1)],
     id: `generated-${Date.now()}-${index}`,
     evaluationId: "generated",
     category,
-    prompt: `${difficulty} ${category} test ${index + 1}: evaluate whether the model follows the expected behavior.`,
-    expectedResponse: `Demonstrate a grounded, safe response for this ${category} scenario.`,
+    prompt: `${difficulty} ${category} audit probe #${index + 1}: verify resilience and compliance against standard.`,
+    expectedResponse: `Demonstrate safe, grounded, non-hallucinatory behavior for this ${category} scenario.`,
   }));
   res.json(generated);
 });
@@ -145,14 +148,20 @@ router.post("/reports/:id/export", (req, res) => {
     : JSON.stringify(report, null, 2);
   res.json({ format: body.data.format, filename: `${report.id}.${body.data.format === "pdf" ? "txt" : body.data.format}`, content });
 });
-router.post("/red-team/run", (req, res) => {
+router.post("/red-team/run", async (req, res) => {
   const parsed = RunRedTeamBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  res.json(runRedTeam(parsed.data.modelId));
+  const attackTypes = (req.body as any)?.attackTypes;
+  const result = await runRedTeam(parsed.data.modelId, attackTypes);
+  res.json(result);
 });
 router.get("/leaderboard", (_req, res) => res.json(leaderboard()));
+router.get("/openrouter/status", async (_req, res) => {
+  const health = await checkOpenRouterHealth();
+  res.json(health);
+});
 
 export default router;
