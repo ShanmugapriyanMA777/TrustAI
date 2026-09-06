@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: TrustScore AI evaluation and auditing platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard aggregates and activity
+  - name: models
+    description: AI systems available for evaluation
+  - name: evaluations
+    description: Evaluation lifecycle and results
+  - name: reports
+    description: Audit reports and exports
+  - name: red-team
+    description: Adversarial testing
 paths:
   /healthz:
     get:
@@ -24,7 +34,243 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /models:
+    get:
+      operationId: getModels
+      tags: [models]
+      summary: List available AI systems
+      responses:
+        "200":
+          description: AI systems
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Model"
+    post:
+      operationId: createModel
+      tags: [models]
+      summary: Add an AI system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelInput"
+      responses:
+        "201":
+          description: Created AI system
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+  /evaluations:
+    get:
+      operationId: getEvaluations
+      tags: [evaluations]
+      summary: List evaluation runs
+      responses:
+        "200":
+          description: Evaluation runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Evaluation"
+    post:
+      operationId: createEvaluation
+      tags: [evaluations]
+      summary: Create an evaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationInput"
+      responses:
+        "201":
+          description: Created evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+  /evaluations/{id}:
+    get:
+      operationId: getEvaluation
+      tags: [evaluations]
+      summary: Get an evaluation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+        "404":
+          description: Evaluation not found
+    delete:
+      operationId: deleteEvaluation
+      tags: [evaluations]
+      summary: Delete an evaluation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Deleted
+  /evaluations/{id}/run:
+    post:
+      operationId: runEvaluation
+      tags: [evaluations]
+      summary: Run a demo evaluation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Completed evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+  /evaluations/{id}/results:
+    get:
+      operationId: getEvaluationResults
+      tags: [evaluations]
+      summary: List test results for an evaluation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Test results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvaluationResult"
+  /test-suites/generate:
+    post:
+      operationId: generateTestSuite
+      tags: [evaluations]
+      summary: Generate demo test cases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestSuiteInput"
+      responses:
+        "200":
+          description: Generated test cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvaluationResult"
+  /reports:
+    get:
+      operationId: getReports
+      tags: [reports]
+      summary: List audit reports
+      responses:
+        "200":
+          description: Audit reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+  /reports/{id}:
+    get:
+      operationId: getReport
+      tags: [reports]
+      summary: Get an audit report
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Audit report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+  /reports/{id}/export:
+    post:
+      operationId: exportReport
+      tags: [reports]
+      summary: Export an audit report
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportInput"
+      responses:
+        "200":
+          description: Export payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportPayload"
+  /red-team/run:
+    post:
+      operationId: runRedTeam
+      tags: [red-team]
+      summary: Run adversarial red-team checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedTeamInput"
+      responses:
+        "200":
+          description: Red-team results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedTeamReport"
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [models]
+      summary: Rank evaluated AI systems
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
 components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +279,231 @@ components:
           type: string
       required:
         - status
+    Model:
+      type: object
+      required: [id, name, provider, type, trustScore, accuracy, safety, fairness, hallucination, robustness, tests, lastEvaluated]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        provider: { type: string }
+        type: { type: string }
+        description: { type: string }
+        trustScore: { type: number }
+        accuracy: { type: number }
+        safety: { type: number }
+        fairness: { type: number }
+        hallucination: { type: number }
+        robustness: { type: number }
+        explainability: { type: number }
+        tests: { type: integer }
+        lastEvaluated: { type: string }
+        latency: { type: number }
+        cost: { type: number }
+    ModelInput:
+      type: object
+      required: [name, provider, type]
+      properties:
+        name: { type: string, minLength: 1 }
+        provider: { type: string, minLength: 1 }
+        type: { type: string, minLength: 1 }
+        description: { type: string }
+    Evaluation:
+      type: object
+      required: [id, name, modelId, modelName, mode, status, trustScore, tests, passed, failed, critical, hallucinationRate, safetyScore, biasSignals, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        modelId: { type: string }
+        modelName: { type: string }
+        mode: { type: string }
+        status: { type: string, enum: [draft, running, completed, failed] }
+        trustScore: { type: number }
+        tests: { type: integer }
+        passed: { type: integer }
+        failed: { type: integer }
+        critical: { type: integer }
+        hallucinationRate: { type: number }
+        safetyScore: { type: number }
+        biasSignals: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+    EvaluationInput:
+      type: object
+      required: [name, modelId, mode, categories]
+      properties:
+        name: { type: string, minLength: 1 }
+        modelId: { type: string, minLength: 1 }
+        mode: { type: string, enum: [quick, standard, deep, adversarial] }
+        categories:
+          type: array
+          minItems: 1
+          items: { type: string }
+        tests: { type: integer, minimum: 1, maximum: 10000 }
+    EvaluationResult:
+      type: object
+      required: [id, evaluationId, category, prompt, response, expectedResponse, score, confidence, passed, severity, hallucination, safety, bias, reason, evidence, recommendation]
+      properties:
+        id: { type: string }
+        evaluationId: { type: string }
+        category: { type: string }
+        prompt: { type: string }
+        response: { type: string }
+        expectedResponse: { type: string }
+        score: { type: number }
+        confidence: { type: number }
+        passed: { type: boolean }
+        severity: { type: string, enum: [low, medium, high, critical] }
+        hallucination: { type: string }
+        safety: { type: string }
+        bias: { type: string }
+        reason: { type: string }
+        evidence: { type: string }
+        recommendation: { type: string }
+        createdAt: { type: string }
+    TestSuiteInput:
+      type: object
+      required: [category, difficulty, count]
+      properties:
+        category: { type: string }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+        count: { type: integer, minimum: 1, maximum: 100 }
+    Report:
+      type: object
+      required: [id, evaluationId, title, status, trustScore, modelName, createdAt, executiveSummary, methodology, recommendations, criticalFindings]
+      properties:
+        id: { type: string }
+        evaluationId: { type: string }
+        title: { type: string }
+        status: { type: string }
+        trustScore: { type: number }
+        modelName: { type: string }
+        createdAt: { type: string }
+        executiveSummary: { type: string }
+        methodology: { type: string }
+        recommendations:
+          type: array
+          items: { type: string }
+        criticalFindings:
+          type: array
+          items: { type: string }
+        dimensionScores:
+          type: object
+          additionalProperties: { type: number }
+    ExportInput:
+      type: object
+      required: [format]
+      properties:
+        format: { type: string, enum: [json, csv, pdf] }
+    ExportPayload:
+      type: object
+      required: [format, filename, content]
+      properties:
+        format: { type: string }
+        filename: { type: string }
+        content: { type: string }
+    RedTeamInput:
+      type: object
+      required: [modelId]
+      properties:
+        modelId: { type: string }
+        attackTypes:
+          type: array
+          items: { type: string }
+    RedTeamReport:
+      type: object
+      required: [attackCount, successfulAttacks, blockedAttacks, safetyRate, criticalVulnerabilities, findings]
+      properties:
+        attackCount: { type: integer }
+        successfulAttacks: { type: integer }
+        blockedAttacks: { type: integer }
+        safetyRate: { type: number }
+        criticalVulnerabilities: { type: integer }
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/RedTeamFinding"
+    RedTeamFinding:
+      type: object
+      required: [id, type, severity, title, detail, recommendation, status]
+      properties:
+        id: { type: string }
+        type: { type: string }
+        severity: { type: string }
+        title: { type: string }
+        detail: { type: string }
+        recommendation: { type: string }
+        status: { type: string }
+    LeaderboardEntry:
+      type: object
+      required: [rank, model, trustScore, accuracy, safety, fairness, hallucination, robustness, tests, lastEvaluated]
+      properties:
+        rank: { type: integer }
+        model: { type: string }
+        trustScore: { type: number }
+        accuracy: { type: number }
+        safety: { type: number }
+        fairness: { type: number }
+        hallucination: { type: number }
+        robustness: { type: number }
+        tests: { type: integer }
+        lastEvaluated: { type: string }
+    Dashboard:
+      type: object
+      required: [trustScore, status, totalTests, passed, failed, critical, hallucinationRate, biasRisk, safetyScore, dimensions, trend, distribution, severityDistribution, recentEvaluations, recentFailures]
+      properties:
+        trustScore: { type: number }
+        status: { type: string }
+        totalTests: { type: integer }
+        passed: { type: integer }
+        failed: { type: integer }
+        critical: { type: integer }
+        hallucinationRate: { type: number }
+        biasRisk: { type: string }
+        safetyScore: { type: number }
+        dimensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DimensionScore"
+        trend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+        distribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountPoint"
+        severityDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountPoint"
+        recentEvaluations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Evaluation"
+        recentFailures:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvaluationResult"
+    DimensionScore:
+      type: object
+      required: [name, score, fullMark]
+      properties:
+        name: { type: string }
+        score: { type: number }
+        fullMark: { type: number }
+    TrendPoint:
+      type: object
+      required: [date, score]
+      properties:
+        date: { type: string }
+        score: { type: number }
+    CountPoint:
+      type: object
+      required: [name, value]
+      properties:
+        name: { type: string }
+        value: { type: number }
 

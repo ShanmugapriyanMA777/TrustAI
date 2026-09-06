@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "TrustScore AI"
+description = "A responsible AI evaluation platform that runs realistic demo audits across accuracy, safety, fairness, hallucination resistance, robustness, and explainability, then produces transparent TrustScores and audit reports."
+version = "1.0.0"
+id = "artifacts/trustscore-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24972
+
+[services.development]
+run = "pnpm --filter @workspace/trustscore-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/trustscore-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/trustscore-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24972"
+BASE_PATH = "/"
